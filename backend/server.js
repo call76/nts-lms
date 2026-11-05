@@ -38,8 +38,11 @@ app.use(cors({ origin: corsOrigin, credentials: true }));
 // Files go through multer, so JSON bodies can stay small (was 100mb = easy DoS)
 app.use(express.json({ limit: '1mb' }));
 
+// --- FIXED: Safe recursive directory creation for Hostless ---
 const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 app.use('/uploads', express.static(uploadDir, { maxAge: '7d', setHeaders: (res) => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin') }));
 
 // ---------- File upload ----------
