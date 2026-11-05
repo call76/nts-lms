@@ -1,0 +1,199 @@
+{
+  "brand": {
+    "name": "Nezerwa Tech Solution",
+    "shortName": "NTS",
+    "tagline": "Learn • Practice • Excel",
+    "slogan": "Building Skills for a Better Future",
+    "logoUrl": "/images/logo.png",
+    "faviconUrl": "/favicon.png"
+  },
+  "theme": {
+    "primary": "#18378a",
+    "accent": "#f2b01e"
+  },
+  "announcement": {
+    "enabled": false,
+    "text": "",
+    "link": ""
+  },
+  "images": {
+    "welcomeHero": "/images/banner-welcome.webp",
+    "welcomeStory": "/images/banner-learning.webp",
+    "welcomeCta": "/images/banner-workspace.webp",
+    "dashboardHero": "/images/v6-student.webp",
+    "dashboardAdminHero": "/images/v6-school.webp",
+    "coursesHero": "/images/v6-teacher.webp",
+    "internshipsHero": "/images/v6-graduates.webp",
+    "profileCover": "/images/v6-profiles.webp",
+    "communityHero": "/images/v6-graduates2.webp",
+    "learningHero": "/images/v6-lesson.webp",
+    "adminHero": "/images/v6-school.webp",
+    "verificationHero": "/images/v6-graduates.webp",
+    "libraryHero": "/images/v6-keyboard.webp",
+    "bankHero": "/images/v6-lesson.webp",
+    "helpHero": "/images/v6-teacher.webp",
+    "usersHero": "/images/v6-profiles.webp"
+  },
+  "authSlides": [
+    {
+      "image": "/images/banner-learning.webp",
+      "title": "Building Skills for a Better Future",
+      "subtitle": "Learn • Practice • Excel"
+    },
+    {
+      "image": "/images/collage-1.webp",
+      "title": "Your Learning Partner",
+      "subtitle": "for a Brighter Tomorrow"
+    },
+    {
+      "image": "/images/v6-profiles.webp",
+      "title": "Smart records for every learner",
+      "subtitle": "Profiles, marks and certificates in one place"
+    },
+    {
+      "image": "/images/banner-welcome.webp",
+      "title": "Online Courses, Quizzes & Certificates",
+      "subtitle": "Monitor your progress every step"
+    },
+    {
+      "image": "/images/collage-2.webp",
+      "title": "Learn together with your class",
+      "subtitle": "Trainers and students in one community"
+    },
+    {
+      "image": "/images/banner-workspace.webp",
+      "title": "Interactive learning, made easy",
+      "subtitle": "Anytime, on any device"
+    },
+    {
+      "image": "/images/collage-3.webp",
+      "title": "From classroom to career",
+      "subtitle": "Internships and opportunities"
+    }
+  ],
+  "gallery": [
+    "/images/collage-1.webp",
+    "/images/collage-2.webp",
+    "/images/collage-3.webp",
+    "/images/banner-workspace.webp"
+  ],
+  "promoSlides": [
+    {
+      "image": "/images/banner-learning.webp",
+      "tag": "Online Courses",
+      "title": "Learn at your own pace",
+      "text": "Programming, Business Management, Digital Skills and Professional Development.",
+      "to": "/courses",
+      "cta": "Browse courses",
+      "active": true
+    },
+    {
+      "image": "/images/banner-workspace.webp",
+      "tag": "Quizzes & Certificates",
+      "title": "Test your knowledge, get recognised",
+      "text": "Take quizzes, complete modules and earn verifiable NTS certificates.",
+      "to": "/learning",
+      "cta": "Open Learning Studio",
+      "active": true
+    },
+    {
+      "image": "/images/collage-2.webp",
+      "tag": "Community",
+      "title": "Learn together with your class",
+      "text": "Meet classmates and trainers, share materials and grow as one community.",
+      "to": "/community",
+      "cta": "Join community",
+      "active": true
+    },
+    {
+      "image": "/images/collage-3.webp",
+      "tag": "Internships",
+      "title": "Turn skills into opportunities",
+      "text": "Apply for internships and start building your career with NTS.",
+      "to": "/internships",
+      "cta": "See opportunities",
+      "active": true
+    }
+  ],
+  "videos": [],
+  "welcome": {
+    "badge": "Nezerwa Tech Solution",
+    "headline": "Building Skills for a",
+    "headlineAccent": "Better Future",
+    "subtitle": "NTS is your learning partner for a brighter tomorrow. Take online courses, practise with quizzes and assignments, earn certificates and connect with your class community — all in one place.",
+    "primaryCta": "Create free account",
+    "secondaryCta": "Login",
+    "videosTitle": "Watch and learn",
+    "ctaTitle": "Build your skills today for a brighter tomorrow",
+    "ctaText": "Join NTS now — it only takes a minute to create your account."
+  },
+  "social": {
+    "facebook": "",
+    "instagram": "",
+    "twitter": "",
+    "youtube": "",
+    "linkedin": "",
+    "tiktok": "",
+    "whatsapp": "",
+    "website": ""
+  },
+  "contact": {
+    "email": "",
+    "phone": "",
+    "address": ""
+  },
+  "footer": {
+    "text": ""
+  },
+  "system": {
+    "font": "system",
+    "radius": "round",
+    "sidebar": "navy",
+    "defaultDark": false,
+    "customCss": "",
+    "allowStudentSignup": true,
+    "allowParentSignup": true,
+    "allowEmployerSignup": true,
+    "allowGuestSignup": true,
+    "sidebarPromo": true,
+    "sidebarPromoTitle": "Education Today,",
+    "sidebarPromoAccent": "A Better Tomorrow"
+  },
+  "menu": {
+    "items": [],
+    "custom": []
+  },
+  "widgets": {
+    "heroBanner": true,
+    "announcements": true,
+    "quickActions": true,
+    "promo": true,
+    "videos": true
+  },
+  "help": {
+    "title": "Help & Support",
+    "intro": "Find quick answers below or contact the NTS team.",
+    "faqs": [
+      {
+        "q": "How do I add a module?",
+        "a": "Admins open Admin Panel > Courses & Modules > Add Module, fill in the details and upload the cover image, intro video and learning files straight from the computer.",
+        "roles": "ADMIN"
+      },
+      {
+        "q": "How do I get my certificate?",
+        "a": "Finish all lessons, pass the quiz, then open Certificates and request your certificate. Your trainer or the admin approves it and you can download it as PDF.",
+        "roles": ""
+      },
+      {
+        "q": "I forgot my password",
+        "a": "Use Forgot password on the login page, or open Profile > Update Password when you are logged in.",
+        "roles": ""
+      },
+      {
+        "q": "How do parents see their child's results?",
+        "a": "Parents see marks, attendance and certificates once the trainer or the admin shares them from the Attendance and Certificates pages.",
+        "roles": "PARENT,TRAINER,ADMIN"
+      }
+    ]
+  }
+}

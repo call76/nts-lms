@@ -1,0 +1,1045 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  fullName       String
+  passwordHash   String
+  role           String   @default("STUDENT") // STUDENT | TRAINER | ADMIN | EMPLOYER | PARENT | GUEST
+  isVerified     Boolean  @default(true)
+  status         String   @default("ACTIVE") // ACTIVE | INACTIVE | DELETED  (soft delete keeps courses, grades, certificates)
+  isActive       Boolean  @default(true)
+  deletedAt      DateTime?
+  lastLoginAt    DateTime?
+  mustChangePassword Boolean @default(false)
+  avatar         String? @db.Text
+  bio            String? @db.Text
+  phone          String?
+  school         String?
+  schoolType     String?  // UNIVERSITY | HIGH_SCHOOL | TVET
+  department     String?
+  className      String?
+  verificationDocumentUrl String? @db.Text
+  verificationStatus String @default("NOT_SUBMITTED") // NOT_SUBMITTED | PENDING | APPROVED | REJECTED
+  verificationNote String? @db.Text
+  classGroupId   String?
+  postsCount     Int      @default(0)
+  followersCount Int      @default(0)
+  followingCount Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  posts                  Post[]
+  likes                  Like[]
+  comments               Comment[]
+  postReactions          PostReaction[]
+  savedPosts             SavedPost[]
+  reports                Report[]
+  sentMessages           Message[]               @relation("sentMessages")
+  receivedMessages       Message[]               @relation("receivedMessages")
+  chatParticipants       ChatParticipant[]
+  internshipApplications InternshipApplication[]
+  followers              Follow[]                @relation("following")
+  following              Follow[]                @relation("follower")
+  classGroup             ClassGroup?              @relation(fields: [classGroupId], references: [id], onDelete: SetNull)
+  materials              TrainerMaterial[]
+  enrollments            CourseEnrollment[]
+  createdLessons         Lesson[]
+  createdAssignments     Assignment[]
+  createdQuizzes          Quiz[]
+  gradedSubmissions      AssignmentSubmission[] @relation("gradedSubmissions")
+  quizAttempts           QuizAttempt[]
+  certificates           Certificate[]
+  assignmentSubmissions AssignmentSubmission[] @relation("studentSubmissions")
+  certificateRequests CertificateRequest[]
+  parentLinks         ParentStudent[] @relation("parentLinks")
+  studentLinks        ParentStudent[] @relation("studentLinks")
+  notifications       Notification[]
+  isPro               Boolean   @default(false) // paid NTS Pro: unlimited course certificates
+  canEditInternships  Boolean   @default(false) // admin-granted trainer permission
+  canEditEvents       Boolean   @default(false) // admin-granted trainer permission
+  familyThreadsAsParent  FamilyThread[] @relation("threadParent")
+  familyThreadsAsTrainer FamilyThread[] @relation("threadTrainer")
+  familyThreadsAsStudent FamilyThread[] @relation("threadStudent")
+  familyMessages         FamilyMessage[]
+  attendanceRecords      Attendance[]   @relation("attStudent")
+  attendanceMarked       Attendance[]   @relation("attTrainer")
+  remarksReceived        TeacherRemark[] @relation("remarkStudent")
+  remarksWritten         TeacherRemark[] @relation("remarkTrainer")
+
+  @@index([role, status])
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+// One-time codes for email verification and password reset
+model Otp {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  type      String   @default("verification") // verification | reset
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, type])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model Post {
+  id             String    @id @default(cuid())
+  content        String @db.Text
+  imageUrl       String? @db.Text // legacy field, kept for old rows
+  mediaUrl       String? @db.Text
+  mediaType      String? // image | video
+  authorId       String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  isDeleted      Boolean   @default(false)
+  deletedAt      DateTime?
+  isShared       Boolean   @default(false)
+  originalPostId String?
+  likesCount     Int       @default(0)
+  commentsCount  Int       @default(0)
+  sharesCount    Int       @default(0)
+
+  author    User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes     Like[]
+  comments  Comment[]
+  reactions PostReaction[]
+  saves     SavedPost[]
+  reports   Report[]
+
+  @@index([createdAt])
+  @@index([authorId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model PostReaction {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  reaction  String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model SavedPost {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  postId     String
+  reporterId String
+  reason     String? @db.Text
+  status     String   @default("OPEN")
+  createdAt  DateTime @default(now())
+
+  post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, reporterId])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  content   String @db.Text
+  authorId  String
+  postId    String
+  isEdited  Boolean   @default(false)
+  editedAt  DateTime?
+  createdAt DateTime  @default(now())
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+}
+
+model Chat {
+  id        String   @id @default(cuid())
+  name      String?
+  isGroup   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  participants ChatParticipant[]
+  messages     Message[]
+  classGroup   ClassGroup?
+}
+
+model ChatParticipant {
+  id       String   @id @default(cuid())
+  chatId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  content     String @db.Text
+  senderId    String
+  receiverId  String?
+  chatId      String?
+  fileUrl     String? @db.Text
+  fileType    String?
+  fileName    String?
+  replyToId   String?
+  reaction    String?
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  deliveredAt DateTime?
+  isEdited    Boolean   @default(false)
+  editedAt    DateTime?
+  isDeleted   Boolean   @default(false)
+  deletedBy   String?
+  reactions   String? @db.Text // legacy column, unused
+  createdAt   DateTime  @default(now())
+
+  sender   User  @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User? @relation("receivedMessages", fields: [receiverId], references: [id], onDelete: SetNull)
+  chat     Chat? @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+}
+
+model Internship {
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  description String @db.Text
+  location    String?
+  duration    Int
+  stipend     Int      @default(0)
+  deadline    DateTime
+  tradeId     Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  applications InternshipApplication[]
+}
+
+model InternshipApplication {
+  id           String    @id @default(cuid())
+  studentId    String
+  internshipId String
+  status       String    @default("PENDING")
+  message      String? @db.Text
+  appliedAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  internship Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, internshipId])
+}
+
+model Trade {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String? @db.Text
+  icon        String?
+  color       String?
+  modules     Module[]
+}
+
+model Module {
+  id          Int     @id @default(autoincrement())
+  tradeId     Int
+  level       Int // 1 = Level 3, 2 = Level 4, 3 = Level 5
+  code        String
+  name        String
+  description String? @db.Text
+  coverUrl    String? @db.Text // uploaded from the admin's device (/uploads/..)
+  introVideoUrl String? @db.Text // uploaded intro / overview video (/uploads/..)
+  hours       Int?    // notional learning hours
+
+  trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  enrollments CourseEnrollment[]
+  lessons Lesson[]
+  assignments Assignment[]
+  quizzes Quiz[]
+  certificates Certificate[]
+  certificateRequests CertificateRequest[]
+
+  @@unique([tradeId, code])
+}
+
+
+model ClassGroup {
+  id          String   @id @default(cuid())
+  name        String
+  school      String?
+  schoolType  String?
+  department  String
+  level       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  chatId      String? @unique
+  chat        Chat? @relation(fields: [chatId], references: [id], onDelete: SetNull)
+  members     User[]
+  materials   TrainerMaterial[]
+  @@unique([school, department, level, name])
+  @@index([department, level])
+}
+
+model TrainerMaterial {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  fileUrl     String   @db.Text
+  fileName    String
+  fileType    String
+  trainerId   String
+  classGroupId String?
+  createdAt   DateTime @default(now())
+  trainer     User @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  classGroup  ClassGroup? @relation(fields: [classGroupId], references: [id], onDelete: SetNull)
+  @@index([classGroupId, createdAt])
+}
+
+model CourseEnrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  moduleId  Int
+  progress  Int      @default(0)
+  status    String   @default("ENROLLED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module    Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  @@unique([userId, moduleId])
+}
+
+
+model Lesson {
+  id          String   @id @default(cuid())
+  moduleId    Int
+  trainerId   String
+  title       String
+  content     String?  @db.LongText
+  videoUrl    String?  @db.Text
+  resourceUrl String?  @db.Text
+  order       Int      @default(0)
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  trainer     User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  @@index([moduleId, order])
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  moduleId    Int
+  trainerId   String
+  title       String
+  instructions String  @db.LongText
+  attachmentUrl String? @db.Text
+  dueAt       DateTime?
+  maxScore    Int      @default(100)
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  trainer     User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  submissions AssignmentSubmission[]
+  @@index([moduleId, createdAt])
+}
+
+model AssignmentSubmission {
+  id          String   @id @default(cuid())
+  assignmentId String
+  studentId   String
+  answer      String?  @db.LongText
+  fileUrl     String?  @db.Text
+  status      String   @default("SUBMITTED")
+  score       Float?
+  feedback    String?  @db.Text
+  gradedById  String?
+  submittedAt DateTime @default(now())
+  gradedAt    DateTime?
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student     User @relation("studentSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  gradedBy    User? @relation("gradedSubmissions", fields: [gradedById], references: [id], onDelete: SetNull)
+  @@unique([assignmentId, studentId])
+  @@index([studentId, submittedAt])
+}
+
+model Quiz {
+  id          String   @id @default(cuid())
+  moduleId    Int
+  trainerId   String
+  title       String
+  description String?  @db.Text
+  questions   String   @db.LongText // JSON array: prompt, options, answerIndex, points
+  passMark    Int      @default(50)
+  lessonId    String?  // when set, the student must finish watching this lesson's video first
+  published   Boolean  @default(false)
+  timeLimit   Int?     // minutes, empty = no limit (V6)
+  maxAttempts Int?     // empty = unlimited (V6)
+  showAnswers Boolean  @default(true) // show the correct answers after submitting (V6)
+  createdAt   DateTime @default(now())
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  trainer     User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  attempts    QuizAttempt[]
+}
+
+model QuizAttempt {
+  id          String   @id @default(cuid())
+  quizId      String
+  studentId   String
+  answers     String   @db.LongText
+  score       Float
+  total       Float
+  passed      Boolean
+  createdAt   DateTime @default(now())
+  quiz        Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student     User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@index([studentId, createdAt])
+}
+
+model Certificate {
+  id          String   @id @default(cuid())
+  studentId   String
+  moduleId    Int
+  code        String   @unique
+  issuedAt    DateTime @default(now())
+  status      String   @default("ACTIVE") // ACTIVE | SUSPENDED | REVOKED
+  finalScore  Float?
+  assessmentSummary String? @db.LongText
+  studentPhotoUrl String? @db.Text
+  internshipTitle String?
+  templateName String?
+  templateId String?
+  sourceFileUrl String? @db.Text
+  signaturesJson String? @db.LongText
+  revokedAt   DateTime?
+  revokedReason String? @db.Text
+  updatedAt   DateTime @updatedAt
+  student     User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  module      Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  @@unique([studentId, moduleId])
+  @@index([status, issuedAt])
+}
+
+model CertificateRequest {
+  id          String   @id @default(cuid())
+  studentId   String
+  moduleId    Int
+  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  note        String?  @db.Text
+  reviewedById String?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  @@unique([studentId, moduleId])
+  @@index([status, createdAt])
+}
+
+
+// Site-wide settings edited by the admin (logo, images, videos, social links, texts, colours)
+model SiteSetting {
+  key       String   @id
+  value     String   @db.LongText
+  updatedAt DateTime @updatedAt
+}
+
+
+// V5: configurable certificate templates and approved signatories.
+model CertificateTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  institution    String?
+  logoUrl        String?  @db.Text
+  stampUrl       String?  @db.Text
+  backgroundUrl  String?  @db.Text
+  primaryColor   String   @default("#163b65")
+  secondaryColor String   @default("#c7a34b")
+  layoutJson     String?  @db.LongText
+  isDefault      Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  @@index([isActive, isDefault])
+}
+
+model CertificateSignatory {
+  id          String   @id @default(cuid())
+  fullName    String
+  title       String
+  signatureUrl String? @db.Text
+  institution String?
+  isAuthorized Boolean @default(false)
+  isActive    Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([isAuthorized, isActive])
+}
+
+model CertificateAuditLog {
+  id           String   @id @default(cuid())
+  certificateId String
+  actorId      String
+  action       String
+  details      String?  @db.LongText
+  createdAt    DateTime @default(now())
+  @@index([certificateId, createdAt])
+}
+
+model CertificatePolicy {
+  id             String   @id @default(cuid())
+  moduleId       Int      @unique
+  requireQuiz    Boolean  @default(false)
+  requireVideo   Boolean  @default(false)
+  videoLessonId  String?
+  quizId         String?
+  minimumScore   Float    @default(70)
+  maxAttempts    Int      @default(3)
+  updatedById    String
+  updatedAt      DateTime @updatedAt
+}
+
+model InternshipCertificateRequest {
+  id            String   @id @default(cuid())
+  studentId     String
+  applicationId String   @unique
+  status        String   @default("PENDING")
+  note          String?  @db.Text
+  reviewedById  String?
+  reviewedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([studentId, status])
+}
+
+model InternshipCertificate {
+  id            String   @id @default(cuid())
+  studentId     String
+  applicationId String   @unique
+  code          String   @unique
+  internshipTitle String
+  company       String
+  finalScore    Float?
+  assessmentSummary String? @db.LongText
+  startDate     DateTime?
+  endDate       DateTime?
+  studentPhotoUrl String? @db.Text
+  templateId    String?
+  sourceFileUrl String? @db.Text
+  signaturesJson String? @db.LongText
+  status        String   @default("ACTIVE")
+  revokedAt     DateTime?
+  revokedReason String?  @db.Text
+  issuedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([studentId, status])
+}
+
+// Private course files are stored outside the public /uploads static directory.
+model LearningResource {
+  id           String   @id @default(cuid())
+  moduleId     Int
+  trainerId    String
+  title        String
+  description  String?  @db.Text
+  storageName  String
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  createdAt    DateTime @default(now())
+  isPublished  Boolean  @default(false)
+  @@index([moduleId, isPublished, createdAt])
+}
+
+
+// V5.1: links a PARENT account to the student(s) they follow
+model ParentStudent {
+  id           String   @id @default(cuid())
+  parentId     String
+  studentId    String
+  relationship String   @default("Parent")
+  status       String   @default("APPROVED") // PENDING (self-registered parent, waiting for the student/admin) | APPROVED
+  createdAt    DateTime @default(now())
+  parent       User     @relation("parentLinks", fields: [parentId], references: [id], onDelete: Cascade)
+  student      User     @relation("studentLinks", fields: [studentId], references: [id], onDelete: Cascade)
+  @@unique([parentId, studentId])
+  @@index([studentId])
+}
+
+// V5.1: who did what in the admin user-management area
+model AdminAuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  targetId  String?
+  action    String
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+  @@index([targetId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+
+// V5.2: announcements (admin / trainers -> a role or everyone)
+model Announcement {
+  id        String    @id @default(cuid())
+  title     String
+  body      String    @db.Text
+  audience  String    @default("ALL")    // ALL | STUDENT | TRAINER | PARENT | EMPLOYER | GUEST
+  priority  String    @default("NORMAL") // NORMAL | IMPORTANT | URGENT
+  pinned    Boolean   @default(false)
+  authorId  String
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  @@index([audience, createdAt])
+  @@index([pinned, createdAt])
+}
+
+// V5.2: in-app notifications (bell icon)
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   @default("INFO") // INFO | ANNOUNCEMENT | GRADE | APPLICATION | CERTIFICATE
+  title     String
+  body      String?  @db.Text
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, isRead, createdAt])
+}
+
+
+// V5.3: parent <-> teacher conversations about one student. The student can READ them (transparency).
+model FamilyThread {
+  id        String   @id @default(cuid())
+  parentId  String
+  trainerId String
+  studentId String
+  subject   String
+  status    String   @default("OPEN") // OPEN | CLOSED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  parent    User     @relation("threadParent", fields: [parentId], references: [id], onDelete: Cascade)
+  trainer   User     @relation("threadTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
+  student   User     @relation("threadStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  messages  FamilyMessage[]
+  @@index([parentId, updatedAt])
+  @@index([trainerId, updatedAt])
+  @@index([studentId, updatedAt])
+}
+
+model FamilyMessage {
+  id        String   @id @default(cuid())
+  threadId  String
+  senderId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  thread    FamilyThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender    User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  @@index([threadId, createdAt])
+}
+
+// V5.3: daily attendance (one row per student per day)
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  trainerId String?
+  date      DateTime @db.Date
+  status    String   @default("PRESENT") // PRESENT | ABSENT | LATE | EXCUSED
+  note      String?
+  sessionId String?
+  joinedAt  DateTime?
+  visibleToParents Boolean @default(true) // trainer can keep a record private
+  createdAt DateTime @default(now())
+  student   User     @relation("attStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  trainer   User?    @relation("attTrainer", fields: [trainerId], references: [id], onDelete: SetNull)
+  @@unique([studentId, date])
+  @@index([date])
+}
+
+// V5.3: short notes from a teacher about a student (praise / concern / note); parent and student can read them
+model TeacherRemark {
+  id        String   @id @default(cuid())
+  studentId String
+  trainerId String
+  type      String   @default("NOTE") // PRAISE | CONCERN | NOTE
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  student   User     @relation("remarkStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  trainer   User     @relation("remarkTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
+  @@index([studentId, createdAt])
+}
+
+// V5.3: school calendar
+model SchoolEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  startsAt    DateTime
+  location    String?
+  audience    String   @default("ALL") // ALL | STUDENT | TRAINER | PARENT | EMPLOYER | GUEST
+  createdById String?
+  createdAt   DateTime @default(now())
+  @@index([startsAt])
+}
+
+
+// V5.4: an online class the trainer opens for attendance. Students check in with the code shown in class;
+// the trainer then VERIFIES who really attended and decides whether parents / admin get the result.
+model AttendanceSession {
+  id            String   @id @default(cuid())
+  trainerId     String
+  classGroupId  String
+  title         String
+  meetingLink   String?
+  code          String
+  startsAt      DateTime @default(now())
+  opensUntil    DateTime
+  status        String   @default("OPEN") // OPEN | CLOSED | VERIFIED
+  sharedWithParents Boolean @default(false)
+  sharedWithAdmin   Boolean @default(false)
+  verifiedAt    DateTime?
+  createdAt     DateTime @default(now())
+  checkins      AttendanceCheckin[]
+  @@index([trainerId, createdAt])
+  @@index([classGroupId, createdAt])
+}
+
+model AttendanceCheckin {
+  id          String   @id @default(cuid())
+  sessionId   String
+  studentId   String
+  checkedInAt DateTime @default(now())
+  decision    String   @default("PENDING") // PENDING | CONFIRMED | REJECTED (checked in but did not really attend)
+  session     AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@unique([sessionId, studentId])
+  @@index([studentId])
+}
+
+// V5.4: a student (or their parent) explains an absence; the trainer approves it -> day becomes EXCUSED
+model AbsenceExcuse {
+  id          String   @id @default(cuid())
+  studentId   String
+  submittedById String
+  date        DateTime @db.Date
+  reason      String   @db.Text
+  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  decidedById String?
+  decidedAt   DateTime?
+  createdAt   DateTime @default(now())
+  @@index([studentId, createdAt])
+  @@index([status])
+}
+
+
+// ---------------------------------------------------------------------------------------
+// V5.5
+// ---------------------------------------------------------------------------------------
+// Which classes a trainer teaches (set by the admin). A trainer only sees the students of these classes.
+model TrainerAssignment {
+  id           String   @id @default(cuid())
+  trainerId    String
+  classGroupId String
+  createdAt    DateTime @default(now())
+  @@unique([trainerId, classGroupId])
+  @@index([classGroupId])
+}
+
+// What a trainer/admin chose to share with the parents of a student.
+model ParentShare {
+  id          String   @id @default(cuid())
+  studentId   String
+  kind        String   // MARKS | CERTIFICATES | ATTENDANCE
+  grantedById String
+  createdAt   DateTime @default(now())
+  @@unique([studentId, kind])
+}
+
+// Student watched a lesson video (needed before the video quiz / certificate)
+model LessonView {
+  id          String   @id @default(cuid())
+  lessonId    String
+  studentId   String
+  watchedPct  Int      @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime @updatedAt
+  @@unique([lessonId, studentId])
+}
+
+// Questions about certificates, answered by the admin
+model CertificateQuestion {
+  id          String   @id @default(cuid())
+  studentId   String
+  subject     String
+  message     String   @db.Text
+  status      String   @default("OPEN") // OPEN | ANSWERED
+  reply       String?  @db.Text
+  repliedById String?
+  repliedAt   DateTime?
+  createdAt   DateTime @default(now())
+  @@index([studentId, createdAt])
+  @@index([status])
+}
+
+// A student asks to be upgraded to NTS Pro (paid) to get more than the free certificates
+model ProRequest {
+  id          String   @id @default(cuid())
+  studentId   String
+  reference   String   // mobile-money / bank payment reference
+  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  decidedById String?
+  decidedAt   DateTime?
+  createdAt   DateTime @default(now())
+  @@index([status, createdAt])
+}
+
+// In-system video meetings (Jitsi rooms) for students, trainers and admin
+model Meeting {
+  id          String   @id @default(cuid())
+  hostId      String
+  title       String
+  description String?  @db.Text
+  room        String   @unique
+  startsAt    DateTime
+  classGroupId String?
+  invitedIds  String?  @db.LongText // JSON array of user ids (empty + no class = everyone allowed to see it by link)
+  status      String   @default("SCHEDULED") // SCHEDULED | LIVE | ENDED
+  createdAt   DateTime @default(now())
+  joins       MeetingJoin[]
+  @@index([startsAt])
+}
+
+model MeetingJoin {
+  id        String   @id @default(cuid())
+  meetingId String
+  userId    String
+  joinedAt  DateTime @default(now())
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  @@unique([meetingId, userId])
+}
+
+// A student's personal library of notes/files kept inside the system
+model SavedNote {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  url       String   @db.Text
+  source    String?  // e.g. lesson / material / resource
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
+}
+
+
+// ---------- V6 ----------
+// Discussion under a lesson (students ask, trainers answer)
+model LessonComment {
+  id        String   @id @default(cuid())
+  lessonId  String
+  userId    String
+  parentId  String?
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  @@index([lessonId, createdAt])
+  @@index([userId])
+}
+
+// Student rating of a module (one per student)
+model ModuleReview {
+  id        String   @id @default(cuid())
+  moduleId  Int
+  userId    String
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  @@unique([moduleId, userId])
+  @@index([moduleId])
+}
+
+// ---------- V6: TVET competency, logbook, fees, timetable ----------
+model Competency {
+  id          String   @id @default(cuid())
+  moduleId    Int
+  code        String
+  title       String
+  criteria    String   @db.LongText // JSON array of performance criteria
+  createdById String
+  createdAt   DateTime @default(now())
+  @@index([moduleId])
+}
+
+model CompetencyAssessment {
+  id           String   @id @default(cuid())
+  competencyId String
+  studentId    String
+  assessorId   String
+  status       String   @default("NOT_YET") // NOT_YET | COMPETENT
+  checked      String   @db.LongText // JSON array of criteria indexes that were achieved
+  comment      String?  @db.Text
+  evidenceUrl  String?  @db.Text // photo / video / document of the practical work
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  @@unique([competencyId, studentId])
+  @@index([studentId])
+}
+
+model InternshipLog {
+  id             String   @id @default(cuid())
+  applicationId  String
+  studentId      String
+  logDate        DateTime @db.Date
+  hours          Float    @default(8)
+  activities     String   @db.Text
+  status         String   @default("SUBMITTED") // SUBMITTED | APPROVED | REJECTED
+  reviewComment  String?  @db.Text
+  reviewedById   String?
+  createdAt      DateTime @default(now())
+  @@index([applicationId, logDate])
+  @@index([studentId])
+}
+
+model InternshipEvaluation {
+  id            String   @id @default(cuid())
+  applicationId String   @unique
+  evaluatorId   String
+  punctuality   Int
+  skills        Int
+  teamwork      Int
+  attitude      Int
+  comment       String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+}
+
+model FeeItem {
+  id           String   @id @default(cuid())
+  title        String
+  amount       Int
+  dueDate      DateTime?
+  classGroupId String?  // empty = every student
+  createdAt    DateTime @default(now())
+}
+
+model FeePayment {
+  id           String   @id @default(cuid())
+  feeItemId    String
+  studentId    String
+  amount       Int
+  method       String   @default("CASH") // CASH | MOBILE_MONEY | BANK
+  reference    String?
+  receiptNo    String   @unique
+  recordedById String
+  paidAt       DateTime @default(now())
+  @@index([studentId])
+  @@index([feeItemId])
+}
+
+model TimetableSlot {
+  id           String   @id @default(cuid())
+  classGroupId String
+  day          Int      // 1 = Monday ... 7 = Sunday
+  startTime    String   // HH:MM
+  endTime      String
+  subject      String
+  trainerId    String?
+  room         String?
+  createdAt    DateTime @default(now())
+  @@index([classGroupId, day])
+  @@index([trainerId, day])
+}
+
+
+// V6.2: school library. Files are uploaded from the device (no links) and served from /uploads.
+model LibraryItem {
+  id          String   @id @default(cuid())
+  title       String
+  author      String?
+  category    String   @default("General")
+  description String?  @db.Text
+  fileUrl     String   @db.Text
+  fileName    String
+  fileType    String
+  sizeBytes   Int      @default(0)
+  coverUrl    String?  @db.Text
+  uploaderId  String
+  uploaderName String?
+  downloads   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([category, createdAt])
+  @@index([uploaderId])
+}
+
+// V6.2: question bank. Trainers keep reusable questions here and build quizzes from them.
+model BankQuestion {
+  id          String   @id @default(cuid())
+  ownerId     String
+  moduleId    Int?
+  topic       String?
+  difficulty  String   @default("MEDIUM") // EASY | MEDIUM | HARD
+  prompt      String   @db.Text
+  options     String   @db.Text // JSON array of strings
+  answerIndex Int
+  points      Int      @default(1)
+  explanation String?  @db.Text
+  imageUrl    String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([ownerId, moduleId])
+  @@index([topic])
+}

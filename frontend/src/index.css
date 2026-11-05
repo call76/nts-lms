@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Brand colours. The admin can change them in Site Settings (see src/services/theme.js). */
+:root {
+  --nts-50: 239 241 247;
+  --nts-100: 220 225 237;
+  --nts-200: 186 195 220;
+  --nts-300: 144 159 199;
+  --nts-400: 98 119 175;
+  --nts-500: 63 89 158;
+  --nts-600: 40 69 146;
+  --nts-700: 24 55 138;
+  --nts-800: 18 41 104;
+  --nts-900: 12 28 69;
+  --nts-950: 8 18 44;
+  --gold-50: 254 249 237;
+  --gold-100: 253 241 214;
+  --gold-200: 250 227 176;
+  --gold-300: 248 212 131;
+  --gold-400: 245 193 80;
+  --gold-500: 242 176 30;
+  --gold-600: 213 155 26;
+  --gold-700: 174 127 22;
+  --gold-800: 140 102 17;
+  --gold-900: 109 79 13;
+}
+
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark Mode Scrollbar */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Light Mode Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+/* Message Reaction Animation */
+@keyframes reactionPop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.reaction-animation {
+  animation: reactionPop 0.3s ease-out;
+}
+
+/* Loading Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Call Animation */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-bounce {
+  animation: bounce 0.5s infinite;
+}
+
+/* ---- V5.2 design polish ---- */
+html { scroll-behavior: smooth; }
+body { letter-spacing: -0.005em; }
+:focus-visible { outline: 2px solid rgb(var(--nts-400)); outline-offset: 2px; }
+.fade-in { animation: fadeIn 0.35s ease-out both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+
+/* NTS V6.1 visual system */
+:root { color-scheme: light; }
+.dark { color-scheme: dark; }
+img { max-width: 100%; }
+.dashboard-feature-card { isolation: isolate; }
+@keyframes ntsGlow {
+  0%, 100% { box-shadow: 0 10px 28px rgba(15, 52, 120, .12); }
+  50% { box-shadow: 0 14px 36px rgba(15, 52, 120, .22); }
+}
+.nts-glow { animation: ntsGlow 4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .nts-glow { animation: none !important; }
+}
+
+
+/* ---- V6.2 System Builder: fonts and corner style chosen by the admin ---- */
+html[data-font="serif"] body { font-family: Georgia, 'Times New Roman', serif; }
+html[data-font="humanist"] body { font-family: 'Segoe UI', Candara, 'Gill Sans', 'Trebuchet MS', sans-serif; }
+html[data-font="rounded"] body { font-family: ui-rounded, 'Nunito', 'Varela Round', 'Trebuchet MS', sans-serif; }
+html[data-font="mono"] body { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: 0; }
+html[data-radius="sharp"] :is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-\[28px\], .rounded-t-3xl) { border-radius: 4px !important; }
+html[data-radius="soft"] :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-\[28px\], .rounded-t-3xl) { border-radius: 10px !important; }

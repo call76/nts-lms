@@ -1,0 +1,17 @@
+[build]
+  base = "frontend"
+  command = "CI=false npm run build"
+  publish = "build"
+
+[build.environment]
+  # Must be prefixed REACT_APP_ or Create React App does not expose them to the browser
+  # (the old SOCKET_URL name was silently ignored).
+  REACT_APP_API_URL = "https://nts-backend-409a.onrender.com/api"
+  REACT_APP_SOCKET_URL = "https://nts-backend-409a.onrender.com"
+  CI = "false"
+
+# Single-page app: send every route to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
